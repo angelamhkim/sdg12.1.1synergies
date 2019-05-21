@@ -1,0 +1,174 @@
+---
+title: "SDG 12.1.1 Synergies"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This project is to explore if there is any connection between SDG12.1.1 on SCP mainstreaming and SDG 12.2.1, 12.2.2, 6.4.1, and 7.3.1. Because SDG12.1.1 only has data for 2017, only one year is analyzed.
+
+###Data Sources
+The data was downloaded from the Global SDG Indicators Database and from the IRP Material Flows Database:
+```{r metadata, echo=FALSE, warning=FALSE}
+library(knitr)
+dat <- read.csv("C:/Users/kima/Documents/data.related/12.1.1 paper/sdg12.1.1correlation.csv")
+metadata <- read.csv("C:/Users/kima/Documents/data.related/12.1.1 paper/metadata.csv")
+kable(metadata)
+```
+
+###Cleaning and standardizing the data
+
+71 countries report on national SCP policy instruments. Countries that do not report (not in the 12.1.1 database were assumed to not have national SCP policy instruments.)
+We need to turn the SDG12.1.1 indicators into factor variables and get the log of the material footprint (mf) and domestic material consumption (dmc). We will also create a new variable scp.all that adds all the separate SCP mechanisms.
+```{r standardizing1, echo=FALSE, warning=FALSE}
+dat$scp.all <- dat$coordination.mechanism+dat$macro.policy+dat$policy.instrument+dat$national.action.plan
+dat$scp.all <- as.factor(dat$scp.all)
+dat$coordination.mechanism <- as.factor(dat$coordination.mechanism)
+dat$macro.policy <- as.factor(dat$macro.policy)
+dat$policy.instrument <- as.factor(dat$policy.instrument)
+dat$national.action.plan <- factor(dat$national.action.plan, levels=c("0","1"))
+dat$log.mf <- log(dat$material.footprint)
+dat$log.dmc <- log(dat$domestic.material.consumption)
+str(dat)
+```
+
+###Exploratory Data Analysis
+Let's make some boxplots.
+
+####Material Footprint
+```{r mf.boxplot, echo=FALSE, warning=FALSE, message=FALSE}
+library(ggplot2)
+library(gridExtra)
+library(ggpubr)
+library(plotly)
+
+g.coord <- ggplot(dat, aes(x=coordination.mechanism, y=log.mf, fill=coordination.mechanism))+
+  geom_boxplot(outlier.shape=NA)+
+  scale_fill_discrete(name="legend")+
+  theme(legend.position="none", axis.text.x=element_blank(), axis.ticks.x=element_blank())
+g.macro <- ggplot(dat, aes(x=macro.policy, y=log.mf, fill=macro.policy))+
+  geom_boxplot(outlier.shape=NA)+
+  theme(legend.position = "none", axis.title.y=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+g.policy <- ggplot(dat, aes(x=policy.instrument, y=log.mf, fill=policy.instrument))+
+  geom_boxplot(outlier.shape=NA)+
+  theme(legend.position = "none", axis.title.y=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+g.action <- ggplot(dat, aes(x=national.action.plan, y=log.mf, fill=national.action.plan))+
+  geom_boxplot(outlier.shape=NA)+
+  theme(legend.position = "none", axis.title.y=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+
+mf.plot <- ggarrange(g.coord, g.macro, g.policy, g.action, labels=c("A", "B", "C", "D"), ncol=4, nrow=1, common.legend=TRUE, legend="right")
+
+mf.plot
+#good info on ggarrange here: http://www.sthda.com/english/articles/24-ggpubr-publication-ready-plots/81-ggplot2-easy-way-to-mix-multiple-graphs-on-the-same-page/
+```
+
+Countries with SCP policies seem to have higher material footprint than countries without. Especially countries with sustainable consumption and production (SCP) national action plans or SCP mainstreamed as a priority or target into national policies.
+
+####Domestic Material Consumption
+```{r dmc.boxplot, echo=FALSE, warning=FALSE, message=FALSE}
+
+g.coord <- ggplot(dat, aes(x=coordination.mechanism, y=log.dmc, fill=coordination.mechanism))+
+  geom_boxplot(outlier.shape=NA)+
+  scale_fill_discrete(name="legend")+
+  theme(legend.position="none", axis.text.x=element_blank(), axis.ticks.x=element_blank())
+g.macro <- ggplot(dat, aes(x=macro.policy, y=log.dmc, fill=macro.policy))+
+  geom_boxplot(outlier.shape=NA)+
+  theme(legend.position = "none", axis.title.y=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+g.policy <- ggplot(dat, aes(x=policy.instrument, y=log.dmc, fill=policy.instrument))+
+  geom_boxplot(outlier.shape=NA)+
+  theme(legend.position = "none", axis.title.y=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+g.action <- ggplot(dat, aes(x=national.action.plan, y=log.dmc, fill=national.action.plan))+
+  geom_boxplot(outlier.shape=NA)+
+  theme(legend.position = "none", axis.title.y=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+
+mf.plot <- ggarrange(g.coord, g.macro, g.policy, g.action, labels=c("A", "B", "C", "D"), ncol=4, nrow=1, common.legend=TRUE, legend="right")
+
+mf.plot
+```
+
+Countries with SCP policies seem to have higher domestic material consumption than countries without. Especially countries with sustainable consumption and production (SCP) national action plans or SCP mainstreamed as a priority or target into national policies and countries with policy instrument for sustainable consumption and production.
+
+####Water Use Efficiency
+```{r water efficienty, echo=FALSE, warning=FALSE, message=FALSE}
+
+g.coord <- ggplot(dat, aes(x=coordination.mechanism, y=water.use.efficiency, fill=coordination.mechanism))+
+  geom_boxplot(outlier.shape=NA)+
+  scale_fill_discrete(name="legend")+
+  theme(legend.position="none", axis.text.x=element_blank(), axis.ticks.x=element_blank())
+g.macro <- ggplot(dat, aes(x=macro.policy, y=water.use.efficiency, fill=macro.policy))+
+  geom_boxplot(outlier.shape=NA)+
+  theme(legend.position = "none", axis.title.y=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+g.policy <- ggplot(dat, aes(x=policy.instrument, y=water.use.efficiency, fill=policy.instrument))+
+  geom_boxplot(outlier.shape=NA)+
+  theme(legend.position = "none", axis.title.y=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+g.action <- ggplot(dat, aes(x=national.action.plan, y=water.use.efficiency, fill=national.action.plan))+
+  geom_boxplot(outlier.shape=NA)+
+  theme(legend.position = "none", axis.title.y=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+
+mf.plot <- ggarrange(g.coord, g.macro, g.policy, g.action, labels=c("A", "B", "C", "D"), ncol=4, nrow=1, common.legend=TRUE, legend="right")
+
+mf.plot
+```
+
+Countries with SCP policies seem to have higher water use efficiency than countries without. In other words, in coutries that have SCP policies, there is a higher value added of a given major sector relative to the volume of water used.
+
+####Energy Intensity
+```{r energy intensity, echo=FALSE, warning=FALSE, message=FALSE}
+
+g.coord <- ggplot(dat, aes(x=coordination.mechanism, y=energy.intensity, fill=coordination.mechanism))+
+  geom_boxplot(outlier.shape=NA)+
+  scale_fill_discrete(name="legend")+
+  theme(legend.position="none", axis.text.x=element_blank(), axis.ticks.x=element_blank())
+g.macro <- ggplot(dat, aes(x=macro.policy, y=energy.intensity, fill=macro.policy))+
+  geom_boxplot(outlier.shape=NA)+
+  theme(legend.position = "none", axis.title.y=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+g.policy <- ggplot(dat, aes(x=policy.instrument, y=energy.intensity, fill=policy.instrument))+
+  geom_boxplot(outlier.shape=NA)+
+  theme(legend.position = "none", axis.title.y=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+g.action <- ggplot(dat, aes(x=national.action.plan, y=energy.intensity, fill=national.action.plan))+
+  geom_boxplot(outlier.shape=NA)+
+  theme(legend.position = "none", axis.title.y=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+
+mf.plot <- ggarrange(g.coord, g.macro, g.policy, g.action, labels=c("A", "B", "C", "D"), ncol=4, nrow=1, common.legend=TRUE, legend="right")
+
+mf.plot
+```
+
+There seems to be no difference in energy intensity between countries with SCP policies and countries without. 
+
+####Aggregated 12.1.1
+All four SCP policy instruments were added. A 0 indicates no SCP instruments, 1 indicates one SCP instrument and so on. Higher scp.all values indicate more SCP policy instruments
+```{r scp.all, echo=FALSE, warning=FALSE, message=FALSE}
+
+g.mf <- ggplot(dat, aes(x=scp.all, y=log.mf, fill=scp.all))+
+  geom_boxplot(outlier.shape=NA)+
+  scale_fill_discrete(name="legend")+
+  ggtitle("Log of Material Footprint")+
+  theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+g.dmc <- ggplot(dat, aes(x=scp.all, y=log.dmc, fill=scp.all))+
+  geom_boxplot(outlier.shape=NA)+
+  scale_fill_discrete(name="legend")+
+  ggtitle("Log of Domestic Material Consumption")+
+  theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+g.water <- ggplot(dat, aes(x=scp.all, y=water.use.efficiency, fill=scp.all))+
+  geom_boxplot(outlier.shape=NA)+
+  scale_fill_discrete(name="legend")+
+  ggtitle("Water Use Efficiency")+
+  theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+g.energy <- ggplot(dat, aes(x=scp.all, y=energy.intensity, fill=scp.all))+
+  geom_boxplot(outlier.shape=NA)+
+  scale_fill_discrete(name="legend")+
+  ggtitle("Energy Intensity")+
+  theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+ggplotly(g.mf)
+ggplotly(g.dmc)
+ggplotly(g.water)
+ggplotly(g.energy)
+```
+
